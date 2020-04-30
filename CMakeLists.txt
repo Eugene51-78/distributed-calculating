@@ -16,3 +16,22 @@ add_executable(lab1
         lab1/connect.h
         lab1/pa1.h
 )
+
+add_executable(lab2
+        lab2/pa23.c
+        lab2/pa2345.h
+        lab2/banking.h
+        lab2/bank_robbery.c
+        lab2/logging.c
+        lab2/logging.h
+        lab2/ipc.c
+        lab2/ipc.h
+        lab2/common.h
+        lab2/comm.c
+        lab2/comm.h
+        lab2/connect.c
+        lab2/connect.h
+        lab2/pa1.h
+)
+
+target_link_libraries(lab2 "${PROJECT_SOURCE_DIR}/lib64/libruntime.so")
