@@ -95,9 +95,7 @@ int main(int argc, char * argv[])
     create_pipes(&process);
 
     // fork
-    process_t* children = create_children(&process, balance, process_num - 1 );
-
-    char * buffer = NULL;
+    char * buffer = create_children(&process, balance);
 
     close_pipes(&process);
 
@@ -105,10 +103,10 @@ int main(int argc, char * argv[])
         child_work(&process, buffer);
     } else parent_work(&process);
 
-    AllHistory allHistory = getAllHistory(X, children);
-    AllHistory* allHistoryPtr = &allHistory;
-
-    print_history(allHistoryPtr);
+//    AllHistory allHistory = getAllHistory(X, children);
+//    AllHistory* allHistoryPtr = &allHistory;
+//
+//    print_history(allHistoryPtr);
 
     free(buffer);
 

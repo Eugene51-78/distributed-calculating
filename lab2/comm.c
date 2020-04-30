@@ -64,39 +64,25 @@ void close_pipes (process_t* process) {
 }
 
 // fork
-process_t * create_children (process_t* process, balance_t* balance, local_id process_count) {
-    process_t * children[process_count];
-    process_t * child_process = malloc(sizeof(process_t));
+char * create_children (process_t* process, balance_t* balance) {
     for (local_id i = 0; i < process->process_num; i++) {
         if (i != PARENT_ID && process->cur_id == PARENT_ID) {
-            child_process->cur_id = i;
-            child_process->balance_state.s_balance = balance[i-1];
-            child_process->balance_state.s_balance_pending_in = 0;
-            child_process->balance_state.s_time = get_physical_time();
-            child_process->balance_history.s_id = i;
-            child_process->balance_history.s_history_len = 1;
-            child_process->balance_history.s_history[process->balance_history.s_history_len] = process->balance_state;
-//            child_process->r_fd =
-            children[i-1] = child_process;
             pid_t pid = fork();
             if ( pid == 0 ) {
                 // I AM CHILD
-               process->cur_id = child_process->cur_id;
-               process->balance_state.s_balance = child_process->balance_state.s_balance;
+               process->cur_id = i;
+               process->balance_state.s_balance = balance[i-1];
                process->balance_state.s_balance_pending_in = 0;
-               process->balance_state.s_time = child_process->balance_state.s_time;
-               process->balance_history.s_id =  child_process->balance_history.s_id;
+               process->balance_state.s_time = get_physical_time();
+               process->balance_history.s_id = i;
                process->balance_history.s_history_len = 1;
-               process->balance_history.s_history[process->balance_history.s_history_len] = child_process->balance_history.s_history[process->balance_history.s_history_len];
-               log_output(fd_event, log_started_fmt, process->cur_id, getpid(), getppid());
-
-                printf("%s %d %s %d", "cur id", process->cur_id, " process num", process->process_num);
+               process->balance_history.s_history[1] = process->balance_state;
+               return log_output(fd_event, log_started_fmt, process->cur_id, getpid(), getppid());
             }
         }
     }
-    free(child_process);
 
-    return * children;
+    return NULL;
 }
 
 void waiting_for_children(){

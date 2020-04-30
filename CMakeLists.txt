@@ -1,6 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
 project (distributed-calculating)
-include_directories(lab1)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall -Werror -pedantic")
 
 add_executable(lab1
@@ -16,6 +15,7 @@ add_executable(lab1
         lab1/connect.h
         lab1/pa1.h
 )
+target_include_directories(lab1 PUBLIC lab1)
 
 add_executable(lab2
         lab2/pa23.c
@@ -34,4 +34,5 @@ add_executable(lab2
         lab2/pa1.h
 )
 
+target_include_directories(lab2 PUBLIC lab2)
 target_link_libraries(lab2 "${PROJECT_SOURCE_DIR}/lib64/libruntime.so")
