@@ -7,6 +7,8 @@ Message create_message (MessageType type, char* content);
 
 void wait_for_all_messages (process_t* process, MessageType status);
 
+void transfer_handler(process_t* process);
+
 void wait_STARTED (process_t* process);
 
 void wait_DONE (process_t* process);
