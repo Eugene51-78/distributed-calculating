@@ -94,39 +94,42 @@ void message_handler(process_t* process){
     int DONE_counter = 0;
     int wait_num = process->process_num - 2;
     while (DONE_counter < wait_num){
-        bool flag = true;
-        while(flag){
-            for (int i = 0; i < process->process_num; i++){
-                if (i != process->cur_id){
-                    Message msg;
-                    receive(process, i, &msg); 
-                    if (msg.s_header.s_type == TRANSFER && i == PARENT_ID){    // что если придет сообщ другого типа и может ли?
-                        int dst = msg.transfer_order.s_dst;
-                          
-                        process.balance_state.s_balance-=msg.transfer_order.amount;  //надо изменить баланс
-                        process.balance_state.s_time;       // Что делать со временем?? get_physical_time()
+        Message msg;
+        int src = receive_any(process, &msg);
 
-                        send(process, dst, &msg); //пересылка в Cdst
-                        log_out(log_transfer_out_fmt);
-                    }
-                    else if (msg.s_header.s_type == TRANSFER){   //уже в Cdst
-                            process.balance_state.s_balance+=msg.transfer_order.amount;     
-                            logout(log_transfer_in_fmt);
-                            Message msg_ACK;
-                            msg_ACK.s_header.s_type = ACK;
-                            send(process, PARENT_ID, &msg_ACK); //подтверждение
-                    }
-                    else if (msg.s_header.s_type == STOP){ // 3 phase
-                            Message msg_DONE;
-                            msg_DONE.s_header.s_type = DONE;
-                            send_multicast(process, &msg_DONE);
-                    }
-                    else if (msg.s_header.s_type == DONE){
-                            DONE_counter++;
-                    }
-                    else flag=false;
-                }
-            }
+        if (msg.s_header.s_type == TRANSFER && src == PARENT_ID){
+            TransferOrder* transfer_order = (TransferOrder*) msg->s_payload;
+            int dst = transfer_order.s_dst;
+
+            process.balance_state.s_balance -= transfer_order.amount;  //надо изменить баланс
+            process.balance_state.s_time;       // Что делать со временем?? get_physical_time()
+
+            send(process, dst, &msg); //пересылка в Cdst
+            // log_out(log_transfer_out_fmt);
+        }
+
+        /*
+        WHAT TO DO
+        1) Add small function for each situation
+        2) In this function: changing history of Ci and controlling TIME. 
+        3) Remember about logging
+        */
+
+        else if (msg.s_header.s_type == TRANSFER){   //уже в Cdst
+                TransferOrder* transfer_order = (TransferOrder*)msg->s_payload;
+                process.balance_state.s_balance+=transfer_order.amount;     
+                //log_out(log_transfer_in_fmt);
+                Message msg_ACK;
+                msg_ACK.s_header.s_type = ACK;
+                send(process, PARENT_ID, &msg_ACK); //confirmation
+        }
+        else if (msg.s_header.s_type == STOP){ // 3 phase
+                Message msg_DONE;
+                msg_DONE.s_header.s_type = DONE;
+                send_multicast(process, &msg_DONE);
+        }
+        else if (msg.s_header.s_type == DONE){
+                DONE_counter++;
         }
     }
 }

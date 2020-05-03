@@ -23,8 +23,9 @@ int send_multicast(void * self, const Message * msg){
 
 int receive(void * self, local_id from, Message * msg){
     process_t * process = self;
-    read(process->r_fd[process->cur_id][from], msg, sizeof(Message));
+    if(read(process->r_fd[process->cur_id][from], msg, sizeof(Message)) != -1)
     return 0;
+    else return 1;
 }
 
 int receive_any(void * self, Message * msg){

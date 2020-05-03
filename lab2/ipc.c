@@ -23,10 +23,19 @@ int send_multicast(void * self, const Message * msg){
 
 int receive(void * self, local_id from, Message * msg){
     process_t * process = self;
-    read(process->r_fd[process->cur_id][from], msg, sizeof(Message));
-    return 0;
+    int f = read(process->r_fd[process->cur_id][from], msg, sizeof(Message));
+    if (f == -1 or f == 0) return -1;
+    else return 0;
 }
 
 int receive_any(void * self, Message * msg){
-	return -1;
+    process_t * process = self;
+    while(1){
+        for (local_id id = 0; id < process->process_num; id++){
+            if (id == process->cur_id)
+                continue;
+            else if (receive(self, id, msg) != -1)    
+                    return id;
+        }
+    }
 }
