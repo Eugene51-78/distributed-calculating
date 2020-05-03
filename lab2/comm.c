@@ -77,7 +77,8 @@ char * create_children (process_t* process, balance_t* balance) {
                process->balance_history.s_id = i;
                process->balance_history.s_history_len = 1;
                process->balance_history.s_history[1] = process->balance_state;
-               return log_output(fd_event, log_started_fmt, process->cur_id, getpid(), getppid());
+               return log_output(fd_event, log_started_fmt, get_physical_time(),
+                                    process->cur_id, getpid(), getppid(), process->balance_state.s_balance);
             }
         }
     }
