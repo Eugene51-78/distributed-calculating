@@ -17,6 +17,10 @@ void send_STARTED(process_t* process, char* buf);
 
 void send_DONE(process_t* process, char* buf);
 
+void send_STOP(process_t* process);
+
+void send_ACK(process_t* process)
+
 void child_work(process_t* process, char* buf);
 
 void parent_work(process_t* process);

@@ -46,14 +46,23 @@ void transfer_src_handler(Message msg) {
     TransferOrder* transfer_order = (TransferOrder*) msg->s_payload;
     int dst = transfer_order.s_dst;
 
-    process.balance_state.s_balance -= transfer_order.amount;  //need to change balance
-    process.balance_state.s_time;       // Что делать со временем?? get_physical_time()
+    process->balance_state.s_balance -= transfer_order.s_amount;  //need to change balance
+    process->balance_state.s_time;   //  get_physical_time()
+
+    if (process->balance_state.s_time >= process->balance_history.s_history_len - 1){
+        for (timestamp_t t = process->balance_history.s_history_len; t < process->balance_state.s_time; t++ ) {
+            process->balance_history.s_history[t] = process->balance_history.s_history[t-1];
+            process->balance_history.s_history[t].s_time = t;
+        }
+        process->balance_history.s_history[process->balance_state.s_time] = process->balance_state;
+        process->balance_history.s_history_len = process->balance_state.s_time + 1;
+    }
 
     send(process, dst, &msg); //пересылка в Cdst
 }
 
 void transfer_dst_handler(Message msg) {
-    
+
     TransferOrder* transfer_order = (TransferOrder*)msg->s_payload;
     process.balance_state.s_balance += transfer_order.amount;
     send_ACK(&process);

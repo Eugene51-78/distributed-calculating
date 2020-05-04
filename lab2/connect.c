@@ -63,6 +63,12 @@ void send_DONE(process_t* process, char* buffer) {
     send_multicast(process, &msg_DONE);
 }
 
+void send_STOP(process_t* process) {
+    Message msg_STOP;
+    msg_STOP.s_header.s_type = STOP;
+    send_multicast(process, msg_STOP);
+}
+
 void send_ACK(process_t* process) {
     Message msg_ACK;
     msg_ACK.s_header.s_type = ACK;
@@ -73,6 +79,7 @@ void message_handler(process_t* process) {
     int DONE_counter = 0;
     int wait_num = process->process_num - 2;
     while (DONE_counter < wait_num){
+
         Message msg;
         int src = receive_any(process, &msg);
 
@@ -108,9 +115,7 @@ void parent_existence(process_t* process) {
 
     bank_robbery(process, process->process_num - 1);
     
-    Message msg_STOP;
-    msg_STOP.s_header.s_type = STOP;
-    send_multicast(process, msg_STOP);
+    send_STOP(process);
 
     wait_DONE(process);
     log_received_all_done(PARENT_ID);
