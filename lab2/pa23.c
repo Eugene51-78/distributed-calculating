@@ -27,12 +27,6 @@ void transfer(void * parent_data, local_id src, local_id dst,
     // student, please implement me
 }
 
-int isNumber(char* String) {
-    char str = *String;
-    if (str >= '0' && str <= '9') return 1;
-    else return 0;
-}
-
 AllHistory getAllHistory(int process_count, process_t * children){
     AllHistory allHistory;
     allHistory.s_history_len = process_count;
@@ -100,8 +94,8 @@ int main(int argc, char * argv[])
     close_pipes(&process);
 
     if (process.cur_id != PARENT_ID) {
-        child_work(&process, buffer);
-    } else parent_work(&process);
+        child_existence(&process, buffer);
+    } else parent_existence(&process);
 
 //    AllHistory allHistory = getAllHistory(X, children);
 //    AllHistory* allHistoryPtr = &allHistory;

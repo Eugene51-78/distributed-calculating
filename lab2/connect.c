@@ -75,6 +75,13 @@ void send_ACK(process_t* process) {
     send(process, PARENT_ID, &msg_ACK); //confirmation
 }
 
+void send_BALANCE(process_t* process) {
+    Message balance_history;
+    create_message(balance_history,smth);
+    send(process, PARENT_ID, &balance_history);
+
+}
+
 void message_handler(process_t* process) {
     int DONE_counter = 0;
     int wait_num = process->process_num - 2;
@@ -96,6 +103,8 @@ void message_handler(process_t* process) {
             DONE_counter++;
         }
     }
+    log_received_all_done(process->cur_id);
+    send_BALANCE(process);
 }
         /*
         WHAT TO DO
@@ -106,7 +115,6 @@ void message_handler(process_t* process) {
 void child_existence(process_t* process) {
     send_STARTED(process);
     message_handler(process);
-    log_received_all_done(process->cur_id);
 }
 
 void parent_existence(process_t* process) {
@@ -119,7 +127,12 @@ void parent_existence(process_t* process) {
 
     wait_DONE(process);
     log_received_all_done(PARENT_ID);
-    //print_history(allhistory); here
+
+    AllHistory allHistory = getAllHistory(process.process_num - 1, children);
+    AllHistory* allHistoryPtr = &allHistory; 
+
+    print_history(allHistoryPtr);
+    
     waiting_for_children();
     close_log();
 }
