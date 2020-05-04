@@ -21,27 +21,17 @@
 #include "connect.h"
 #include "banking.h"
 
-void transfer(void * parent_data, local_id src, local_id dst,
-              balance_t amount)
-{
-    // student, please implement me
-}
-
-AllHistory getAllHistory(int process_count, process_t * children){
+AllHistory getAllHistory(int process_count, process_t* children) {
     AllHistory allHistory;
     allHistory.s_history_len = process_count;
     for (int j = 0; j < process_count; ++j) {
         allHistory.s_history[j] = children[j].balance_history;
-        }
+    }
 
     return allHistory;
 }
 
-int main(int argc, char * argv[])
-{
-
-    //bank_robbery(parent_data);
-    //print_history(all);
+int main(int argc, char * argv[]) {
 
     int rez = 0;
     int X = 0;

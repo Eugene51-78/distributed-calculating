@@ -35,7 +35,8 @@ int receive_any(void * self, Message * msg){
             if (id == process->cur_id)
                 continue;
             else if (receive(self, id, msg) != -1)    
-                    return id;
+                    return 0;
+                 else return -1;
         }
     }
 }

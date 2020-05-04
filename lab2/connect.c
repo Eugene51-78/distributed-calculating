@@ -76,10 +76,12 @@ void send_ACK(process_t* process) {
 }
 
 void send_BALANCE(process_t* process) {
-    Message balance_history;
-    create_message(balance_history,smth);
+    Message balance_history = create_message(BALANCE_HISTORY, &process->balance_history, sizeof(BalanceHistory));
     send(process, PARENT_ID, &balance_history);
+}
 
+void freeze_balance(process_t* process) {
+    return 0
 }
 
 void message_handler(process_t* process) {
@@ -88,13 +90,14 @@ void message_handler(process_t* process) {
     while (DONE_counter < wait_num){
 
         Message msg;
-        int src = receive_any(process, &msg);
-
-        if (msg.s_header.s_type == TRANSFER && src == PARENT_ID){
-            transfer_src_handler(&msg);
+        receive_any(process, &msg);
+        TransferOrder* transfer_order = (TransferOrder*) msg->s_payload;
+        int src = transfer_order.s_src;
+        if (msg.s_header.s_type == TRANSFER && src == process->cur_id){
+            transfer_src_handler(&msg, transfer_order);
         }
         else if (msg.s_header.s_type == TRANSFER){   //уже в Cdst
-            transfer_dst_handler(&msg); 
+            transfer_dst_handler(&msg, transfer_order); 
         }
         else if (msg.s_header.s_type == STOP){ // 3 phase
             send_DONE(process);
@@ -104,7 +107,10 @@ void message_handler(process_t* process) {
         }
     }
     log_received_all_done(process->cur_id);
+    freeze_balance(process);
+
     send_BALANCE(process);
+
 }
         /*
         WHAT TO DO
@@ -127,8 +133,23 @@ void parent_existence(process_t* process) {
 
     wait_DONE(process);
     log_received_all_done(PARENT_ID);
-
-    AllHistory allHistory = getAllHistory(process.process_num - 1, children);
+    //need to get Histories and make AllHistory
+    int HISTORY_counter = 0;
+    while(HISTORY_counter < process->process_num - 1){
+        Message msg;
+        for (int i = 1; i < process_num; i++) {
+            if (receive(process, i, &msg) != 0){
+                continue;
+            if (msg.s_header.s_type == BALANCE_HISTORY){
+                HISTORY_counter++;
+                BalanceHistory* history = (BalanceHistory*) msg->s_payload;
+                allHistory.s_history[history.s_id - 1] = history;
+                allHistory.s_history_len++;
+            }
+            }
+        }
+    }
+    
     AllHistory* allHistoryPtr = &allHistory; 
 
     print_history(allHistoryPtr);

@@ -10,22 +10,6 @@
 #include "banking.h"
 #include "transfer.h"
 
-void transfer_messaging(process_t* process, local_id src, local_id dst, balance_t amount) {
-
-        Message transfer_out = create_message(TRANSFER, &transfer_order, sizeof(TransferOrder));
-    
-        send(process, src, &transfer_out);
-        log_out(fd_event, log_transfer_out_fmt, get_physical_time(), transfer_order->s_src, transfer_order->s_amount, transfer_order->s_dst);
-
-        Message transfer_in;
-
-        while (transfer_in.s_header.s_type != ACK){
-        receive(process, dst, &transfer_in);
-        }
-
-        log_out(fd_event, log_transfer_in_fmt, get_physical_time(), transfer_order->s_dst, transfer_order->s_amount, transfer_order->s_src);
-}
-
 void transfer(void * parent_data, local_id src, local_id dst, balance_t amount) {
 
     process_t* process = parent_data;
@@ -41,13 +25,28 @@ void transfer(void * parent_data, local_id src, local_id dst, balance_t amount) 
     }
 }
 
-void transfer_src_handler(Message msg) {
+void transfer_messaging(process_t* process, local_id src, local_id dst, balance_t amount) {
 
-    TransferOrder* transfer_order = (TransferOrder*) msg->s_payload;
+    Message transfer_out = create_message(TRANSFER, &transfer_order, sizeof(TransferOrder));
+    
+    send(process, src, &transfer_out);
+    log_out(fd_event, log_transfer_out_fmt, get_physical_time(), transfer_order->s_src, transfer_order->s_amount, transfer_order->s_dst);
+
+    Message transfer_in;
+
+    while (transfer_in.s_header.s_type != ACK){
+        receive(process, dst, &transfer_in);
+    }
+
+    log_out(fd_event, log_transfer_in_fmt, get_physical_time(), transfer_order->s_dst, transfer_order->s_amount, transfer_order->s_src);
+}
+
+void transfer_src_handler(process_t* process, TransferOrder* order) {
+
+    TransferOrder* transfer_order = order;
     int dst = transfer_order.s_dst;
-
+    process->balance_state.s_time = get_physical_time();
     process->balance_state.s_balance -= transfer_order.s_amount;  //need to change balance
-    process->balance_state.s_time;   //  get_physical_time()
 
     if (process->balance_state.s_time >= process->balance_history.s_history_len - 1){
         for (timestamp_t t = process->balance_history.s_history_len; t < process->balance_state.s_time; t++ ) {
@@ -57,13 +56,22 @@ void transfer_src_handler(Message msg) {
         process->balance_history.s_history[process->balance_state.s_time] = process->balance_state;
         process->balance_history.s_history_len = process->balance_state.s_time + 1;
     }
-
     send(process, dst, &msg); //пересылка в Cdst
 }
 
-void transfer_dst_handler(Message msg) {
+void transfer_dst_handler(process_t* process, TransferOrder* order) {
 
-    TransferOrder* transfer_order = (TransferOrder*)msg->s_payload;
+    TransferOrder* transfer_order = order;
+    process->balance_state.s_time = get_physical_time();
     process.balance_state.s_balance += transfer_order.amount;
+
+    if (process->balance_state.s_time >= process->balance_history.s_history_len - 1){
+        for (timestamp_t t = process->balance_history.s_history_len; t < process->balance_state.s_time; t++ ) {
+            process->balance_history.s_history[t] = process->balance_history.s_history[t-1];
+            process->balance_history.s_history[t].s_time = t;
+        }
+        process->balance_history.s_history[process->balance_state.s_time] = process->balance_state;
+        process->balance_history.s_history_len = process->balance_state.s_time + 1;
+    }
     send_ACK(&process);
 }
