@@ -9,74 +9,65 @@
 #include <sys/wait.h>
 
 #include "logging.h"
-#include "pa1.h"
-#include "common.h"
+#include "pa2345.h"
+#include "common.h" 
 
-#define LOG_START_ERROR "Cannot start log"
-#define LOG_CLOSE_ERROR "Cannot close log"
-
-#define EVENT_FILE      events_log     
-#define PIPES_FILE      pipes_log     
-
-int fd_event;
+int fd_events;
 int fd_pipes;
 
 int start_log() {
-    fd_event = open(EVENT_FILE, O_CREAT | O_TRUNC | O_WRONLY, 00744); 
-    fd_pipes = open(PIPES_FILE, O_CREAT | O_TRUNC | O_WRONLY, 00744);
+    fd_events = open(events_log, O_CREAT | O_TRUNC | O_WRONLY, 00744); 
+    fd_pipes = open(pipes_log, O_CREAT | O_TRUNC | O_WRONLY, 00744);
 
-    if (fd_event == -1 || fd_pipes == -1) {
-        log_error(fd_event, LOG_START_ERROR);
-        log_error(fd_pipes, LOG_START_ERROR);
+    if (fd_events == -1 || fd_pipes == -1) {
+        log_error(fd_events, "Can't start logging");
+        log_error(fd_pipes, "Can't close logging");
         return -1;
     }
     return 0;
 }
 
 void close_log() {
-    close(fd_event);
+    close(fd_events);
     close(fd_pipes);
 }
 
 void log_error(int fd, const char *str) {
-    write(STDERR_FILENO, str, strlen(str));
-    write(STDERR_FILENO, "\n", 1);
-
+    write(2, str, strlen(str));
+    write(2, "\n", 1);
     write(fd, str, strlen(str));
 }
 
-char* log_output(int fd, const char *format, ...) {
+char* log_out(int fd, const char *format, ...) {
     int bufsize = sysconf(_SC_PAGESIZE);
 
     va_list args;
     va_start(args, format);
 
-    char *buffer = (char *) malloc(bufsize);
+    char *buffer = malloc(bufsize);
 
     vsprintf(buffer, format, args);
 
-    if (fd == fd_event)
-    write(STDOUT_FILENO, buffer, strlen(buffer));
-
+    if (fd == fd_events)
+    write(1, buffer, strlen(buffer));
     write(fd, buffer, strlen(buffer));
-
     va_end(args);
 
     return buffer;
 }
 
 void log_received_all_started(local_id id) {
-    log_output(fd_event, log_received_all_started_fmt, id);
+    log_out(fd_event, log_received_all_started_fmt, get_physical_time(), id);
 }
 
 void log_received_all_done(local_id id) {
-    log_output(fd_event, log_received_all_done_fmt, id);
+    log_out(fd_event, log_received_all_done_fmt, get_physical_time(), id);
 }
 
 void log_created_pipe(local_id id, int* fd) {
-    log_output(fd_pipes, log_created_pipe_fmt, id, fd[0], fd[1]);
+    log_out(fd_pipes, log_created_pipe_fmt, id, fd[0], fd[1]);
 }
 
 void log_closed_fd(local_id id, int fd) {
-    log_output(fd_pipes, log_closed_fd_fmt, id, fd);
+    log_out(fd_pipes, log_closed_fd_fmt, id, fd);
 }

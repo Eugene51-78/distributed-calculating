@@ -19,7 +19,7 @@ Message create_message(MessageType type, char* content) {
    	return msg;
 }
 
-void wait_for_all_messages(process_t* process, MessageType type) {
+void wait_all(process_t* process, MessageType type) {
 
     int STARTED_counter = 0;
     int DONE_counter = 0;
@@ -31,7 +31,7 @@ void wait_for_all_messages(process_t* process, MessageType type) {
     
     while (cur_counter < wait_num + par_process){
         for (local_id i = 0; i < process->process_num; i++) {
-            if(i != process->cur_id && i != PARENT_ID){
+            if(i != process->cur_id && i != PARENT_ID) {
                 Message msg;
                 receive(process, i, &msg);
                 if ((type == STARTED) && (msg.s_header.s_type == STARTED)) STARTED_counter++;
@@ -45,52 +45,31 @@ void wait_for_all_messages(process_t* process, MessageType type) {
 }
 
 void wait_STARTED(process_t* process) {
-    wait_for_all_messages(process, STARTED);
+    wait_all(process, STARTED);
 }
 
 void wait_DONE(process_t* process) {
-    wait_for_all_messages(process, DONE);
+    wait_all(process, DONE);
 }
 
 void send_STARTED(process_t* process) {
-    Message msg;
-    msg.s_header.s_type = STARTED;
-    send(process, PARENT_ID, &msg);
+    Message msg_STARTED;
+    msg_STARTED.s_header.s_type = STARTED;
+    send(process, PARENT_ID, &msg_STARTED);
 }
 
 void send_DONE(process_t* process, char* buffer) {
-    Message msg = create_message(DONE, buffer);
-    send_multicast(process, &msg);
+    Message msg_DONE = create_message(DONE, buffer);
+    send_multicast(process, &msg_DONE);
 }
 
-void transfer(void * parent_data, local_id src, local_id dst, balance_t amount){
-
-    process_t* process = parent_data;
-
-    if (process->cur_id = PARENT_ID){ // only parent
-
-        TransferOrder transfer_order;
-        transfer_order.s_src = src;
-        transfer_order.s_dst = dst;
-        transfer_order.s_amount = amount;
-
-        Message msg_out = create_message(TRANSFER, &transfer_order, sizeof(TransferOrder));
-    
-        send(process, src, &msg);
-        log_send_transfer(&transfer_order); // что логировать?
-
-        Message msg_in;
-
-        while (msg_in.s_header.s_type != ACK){
-        receive(process, dst, &msg_in);
-        // что если придет сообщ другого типа и может ли?
-        }
-
-        log_receive_ACK(&smth);  // что логировать?
-    }
+void send_ACK(process_t* process) {
+    Message msg_ACK;
+    msg_ACK.s_header.s_type = ACK;
+    send(process, PARENT_ID, &msg_ACK); //confirmation
 }
 
-void message_handler(process_t* process){
+void message_handler(process_t* process) {
     int DONE_counter = 0;
     int wait_num = process->process_num - 2;
     while (DONE_counter < wait_num){
@@ -98,48 +77,28 @@ void message_handler(process_t* process){
         int src = receive_any(process, &msg);
 
         if (msg.s_header.s_type == TRANSFER && src == PARENT_ID){
-            TransferOrder* transfer_order = (TransferOrder*) msg->s_payload;
-            int dst = transfer_order.s_dst;
-
-            process.balance_state.s_balance -= transfer_order.amount;  //надо изменить баланс
-            process.balance_state.s_time;       // Что делать со временем?? get_physical_time()
-
-            send(process, dst, &msg); //пересылка в Cdst
-            // log_out(log_transfer_out_fmt);
+            transfer_src_handler(&msg);
         }
-
-        /*
-        WHAT TO DO
-        1) Add small function for each situation
-        2) In this function: changing history of Ci and controlling TIME. 
-        3) Remember about logging
-        */
-
         else if (msg.s_header.s_type == TRANSFER){   //уже в Cdst
-                TransferOrder* transfer_order = (TransferOrder*)msg->s_payload;
-                process.balance_state.s_balance+=transfer_order.amount;     
-                //log_out(log_transfer_in_fmt);
-                Message msg_ACK;
-                msg_ACK.s_header.s_type = ACK;
-                send(process, PARENT_ID, &msg_ACK); //confirmation
+            transfer_dst_handler(&msg); 
         }
         else if (msg.s_header.s_type == STOP){ // 3 phase
-                Message msg_DONE;
-                msg_DONE.s_header.s_type = DONE;
-                send_multicast(process, &msg_DONE);
+            send_DONE(process);
         }
         else if (msg.s_header.s_type == DONE){
-                DONE_counter++;
+            DONE_counter++;
         }
     }
 }
+        /*
+        WHAT TO DO
+        1) Changing history of Ci and controlling TIME. 
+        2) Remember about logging
+        */
 
 void child_existence(process_t* process) {
-    
     send_STARTED(process);
     message_handler(process);
-    send_DONE(process, log_out(fd_events, log_done_fmt, process->cur_id)); 
-    wait_DONE(process);
     log_received_all_done(process->cur_id);
 }
 
