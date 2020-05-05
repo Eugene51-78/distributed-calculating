@@ -21,7 +21,7 @@ void close_log();
 
 void log_error (int fd, const char *str);
 
-char* log_output (int fd, const char *format, ...);
+char* log_out(int fd, const char *format, ...);
 
 char* log_STARTED (local_id id, pid_t pid, pid_t parent);
 

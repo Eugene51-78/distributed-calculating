@@ -1,10 +1,10 @@
 #ifndef _TRANSFER_H_
 #define _TRANSFER_H_
 
-void transfer_messaging(process_t* process, local_id src, local_id dst, balance_t amount);
+void wait_ACK(process_t* process, local_id src, local_id dst, balance_t amount);
 
-void transfer_src_handler(Message msg);
+void transfer_src_handler(process_t* process, TransferOrder* order, Message msg);
 
-void transfer_dst_handler(Message msg);
+void transfer_dst_handler(process_t* process, TransferOrder* order, Message msg);
 
-#endif  // _CONNECT_H_
+#endif  // _TRANSFER_H_

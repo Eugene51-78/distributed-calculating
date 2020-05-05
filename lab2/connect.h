@@ -3,7 +3,7 @@
 
 #include "comm.h"
 
-Message create_message(MessageType type, char* content);
+Message create_message(MessageType type, void* content);
 
 void wait_all(process_t* process, MessageType status);
 
@@ -19,10 +19,10 @@ void send_DONE(process_t* process, char* buf);
 
 void send_STOP(process_t* process);
 
-void send_ACK(process_t* process)
+void send_ACK(process_t* process);
 
-void child_work(process_t* process, char* buf);
+void child_existence(process_t* process, char* buf);
 
-void parent_work(process_t* process);
+void parent_existence(process_t* process);
 
 #endif  // _CONNECT_H_

@@ -8,16 +8,32 @@
 #include "logging.h"
 #include "pa1.h"
 #include "banking.h"
+#include "transfer.h"
 
-Message create_message(MessageType type, char* content) {
+Message create_message(MessageType type, void* content) {
+
  	Message msg;
     msg.s_header.s_magic = MESSAGE_MAGIC;
     msg.s_header.s_type = type;
-   	msg.s_header.s_payload_len = strlen(content);
-   	memcpy(&(msg.s_payload), content, strlen(content));
-
+    msg.s_header.s_local_time = get_physical_time();
+    if (type == TRANSFER){
+        int sz = sizeof(TransferOrder);
+        msg.s_header.s_payload_len = sz;
+        memcpy(&(msg.s_payload), content, sz);
+    } else if (type == BALANCE_HISTORY){
+        int sz = sizeof(BalanceHistory);
+        msg.s_header.s_payload_len = sz;
+        memcpy(&(msg.s_payload), content, sz);
+    } else{
+        char* text = (char*) content;
+        int sz = strlen(text);
+        msg.s_header.s_payload_len = sz;          
+        memcpy(&(msg.s_payload), content, sz);
+    }
    	return msg;
 }
+
+
 
 void wait_all(process_t* process, MessageType type) {
 
@@ -66,7 +82,7 @@ void send_DONE(process_t* process, char* buffer) {
 void send_STOP(process_t* process) {
     Message msg_STOP;
     msg_STOP.s_header.s_type = STOP;
-    send_multicast(process, msg_STOP);
+    send_multicast(process, &msg_STOP);
 }
 
 void send_ACK(process_t* process) {
@@ -76,12 +92,12 @@ void send_ACK(process_t* process) {
 }
 
 void send_BALANCE(process_t* process) {
-    Message balance_history = create_message(BALANCE_HISTORY, &process->balance_history, sizeof(BalanceHistory));
+    Message balance_history = create_message(BALANCE_HISTORY, &process->balance_history);
     send(process, PARENT_ID, &balance_history);
 }
 
-void freeze_balance(process_t* process) {
-    return 0
+int freeze_balance(process_t* process) {
+    return 0;
 }
 
 void message_handler(process_t* process) {
@@ -91,16 +107,16 @@ void message_handler(process_t* process) {
 
         Message msg;
         receive_any(process, &msg);
-        TransferOrder* transfer_order = (TransferOrder*) msg->s_payload;
-        int src = transfer_order.s_src;
+        TransferOrder* transfer_order = (TransferOrder*) msg.s_payload;
+        int src = transfer_order->s_src;
         if (msg.s_header.s_type == TRANSFER && src == process->cur_id){
-            transfer_src_handler(&msg, transfer_order);
+            transfer_src_handler(process, transfer_order, msg);
         }
         else if (msg.s_header.s_type == TRANSFER){   //уже в Cdst
-            transfer_dst_handler(&msg, transfer_order); 
+            transfer_dst_handler(process, transfer_order, msg); 
         }
         else if (msg.s_header.s_type == STOP){ // 3 phase
-            send_DONE(process);
+            send_DONE(process, "hello");
         }
         else if (msg.s_header.s_type == DONE){
             DONE_counter++;
@@ -135,22 +151,23 @@ void parent_existence(process_t* process) {
     log_received_all_done(PARENT_ID);
     //need to get Histories and make AllHistory
     int HISTORY_counter = 0;
+    AllHistory allHistory;
     while(HISTORY_counter < process->process_num - 1){
         Message msg;
-        for (int i = 1; i < process_num; i++) {
+        for (int i = 1; i < process->process_num; i++) {
             if (receive(process, i, &msg) != 0){
                 continue;
             if (msg.s_header.s_type == BALANCE_HISTORY){
                 HISTORY_counter++;
-                BalanceHistory* history = (BalanceHistory*) msg->s_payload;
-                allHistory.s_history[history.s_id - 1] = history;
+                BalanceHistory* history = (BalanceHistory*) msg.s_payload;
+                allHistory.s_history[history->s_id - 1] = *history;
                 allHistory.s_history_len++;
             }
             }
         }
     }
-    
-    AllHistory* allHistoryPtr = &allHistory; 
+
+    AllHistory* allHistoryPtr = &allHistory;    
 
     print_history(allHistoryPtr);
     

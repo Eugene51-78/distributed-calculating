@@ -1,12 +1,15 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
 #include <sys/wait.h>
 #include <stdio.h>
+#include <fcntl.h>
 
+#include "comm.h"
 #include "connect.h"
 #include "logging.h"
-#include "pa1.h"
+#include "pa2345.h"
 
 #define SQR(x) x*x
 
@@ -25,8 +28,8 @@ void create_pipes(process_t* process) {
                 int pipefd[2];
                 pipe2(pipefd, O_NONBLOCK);
                 log_created_pipe(process->cur_id, pipefd);
-                process->r_fd[j][i] = fd[0];
-                process->w_fd[i][j] = fd[1];
+                process->r_fd[j][i] = pipefd[0];
+                process->w_fd[i][j] = pipefd[1];
             }
         }
     }

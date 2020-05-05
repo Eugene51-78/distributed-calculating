@@ -12,15 +12,15 @@
 #include "pa2345.h"
 #include "common.h" 
 
-int fd_events;
+int fd_event;
 int fd_pipes;
 
 int start_log() {
-    fd_events = open(events_log, O_CREAT | O_TRUNC | O_WRONLY, 00744); 
+    fd_event = open(events_log, O_CREAT | O_TRUNC | O_WRONLY, 00744); 
     fd_pipes = open(pipes_log, O_CREAT | O_TRUNC | O_WRONLY, 00744);
 
-    if (fd_events == -1 || fd_pipes == -1) {
-        log_error(fd_events, "Can't start logging");
+    if (fd_event == -1 || fd_pipes == -1) {
+        log_error(fd_event, "Can't start logging");
         log_error(fd_pipes, "Can't close logging");
         return -1;
     }
@@ -28,7 +28,7 @@ int start_log() {
 }
 
 void close_log() {
-    close(fd_events);
+    close(fd_event);
     close(fd_pipes);
 }
 
@@ -48,7 +48,7 @@ char* log_out(int fd, const char *format, ...) {
 
     vsprintf(buffer, format, args);
 
-    if (fd == fd_events)
+    if (fd == fd_event)
     write(1, buffer, strlen(buffer));
     write(fd, buffer, strlen(buffer));
     va_end(args);
