@@ -47,31 +47,26 @@ void transfer_src_handler(process_t* process, TransferOrder* order, Message msg)
     int dst = transfer_order->s_dst;
     process->balance_state.s_time = get_physical_time();
     process->balance_state.s_balance -= transfer_order->s_amount;  //need to change balance
-
-    if (process->balance_state.s_time >= process->balance_history.s_history_len - 1){
-        for (timestamp_t t = process->balance_history.s_history_len; t < process->balance_state.s_time; t++ ) {
-            process->balance_history.s_history[t] = process->balance_history.s_history[t-1];
-            process->balance_history.s_history[t].s_time = t;
-        }
-        process->balance_history.s_history[process->balance_state.s_time] = process->balance_state;
-        process->balance_history.s_history_len = process->balance_state.s_time + 1;
-    }
-    send(process, dst, &msg); //пересылка в Cdst
+    change_history(process);
+    send(process, dst, &msg); //moving to Cdst
 }
 
-void transfer_dst_handler(process_t* process, TransferOrder* order, Message msg) {
+void transfer_dst_handler(process_t* process, TransferOrder* order) {
 
     TransferOrder* transfer_order = order;
     process->balance_state.s_time = get_physical_time();
     process->balance_state.s_balance += transfer_order->s_amount;
+    change_history(process);
+    send_ACK(process);
+}
 
-    if (process->balance_state.s_time >= process->balance_history.s_history_len - 1){
-        for (timestamp_t t = process->balance_history.s_history_len; t < process->balance_state.s_time; t++ ) {
+void change_history(process_t* process){
+    if (process->balance_state.s_time >= process->balance_history.s_history_len - 1) {
+        for (timestamp_t t = process->balance_history.s_history_len; t < process->balance_state.s_time; t++) {
             process->balance_history.s_history[t] = process->balance_history.s_history[t-1];
             process->balance_history.s_history[t].s_time = t;
         }
         process->balance_history.s_history[process->balance_state.s_time] = process->balance_state;
         process->balance_history.s_history_len = process->balance_state.s_time + 1;
     }
-    send_ACK(process);
 }

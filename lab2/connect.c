@@ -21,11 +21,15 @@ Message create_message(MessageType type, void* content) {
         int sz = sizeof(TransferOrder);
         msg.s_header.s_payload_len = sz;
         memcpy(&(msg.s_payload), content, sz);
-    } else if (type == BALANCE_HISTORY) {
-        int sz = sizeof(BalanceHistory);
+    } /*else if (type == BALANCE_HISTORY) {
+       // int sz = sizeof(BalanceHistory);
+        int sz = (proc->balance_history.s_history_len) * sizeof(BalanceState) + 
+            sizeof(proc->balance_history.s_history_len) + 
+            sizeof(proc->balance_history.s_id)
         msg.s_header.s_payload_len = sz;
         memcpy(&(msg.s_payload), content, sz);
-    } else {
+        */
+     else {
         char* text = (char*) content;
         int sz = strlen(text);
         msg.s_header.s_payload_len = sz;          
@@ -34,7 +38,21 @@ Message create_message(MessageType type, void* content) {
    	return msg;
 }
 
+Message create_bh(process_t* process){
+    Message msg;
+    msg.s_header.s_magic = MESSAGE_MAGIC;
+    msg.s_header.s_type = BALANCE_HISTORY;
+    msg.s_header.s_local_time = get_physical_time();
+    BalanceHistory* content = &process->balance_history;
 
+    int sz = (process->balance_history.s_history_len) * sizeof(BalanceState) + 
+        sizeof(process->balance_history.s_history_len) + 
+        sizeof(process->balance_history.s_id);
+        msg.s_header.s_payload_len = sz;
+        memcpy(&(msg.s_payload), content, sz);
+
+        return msg;
+}
 
 void wait_all(process_t* process, MessageType type) {
 
@@ -70,13 +88,14 @@ void wait_DONE(process_t* process) {
 }
 
 void send_STARTED(process_t* process) {
-    Message msg_STARTED = create_message(STARTED, log_out(fd_event, log_started_fmt, get_physical_time(),
-                                    process->cur_id, getpid(), getppid(), process->balance_state.s_balance));
+    Message msg_STARTED;
+    msg_STARTED.s_header.s_type = STARTED;
     send(process, PARENT_ID, &msg_STARTED);
 }
 
-void send_DONE(process_t* process, char* log_str) {
-    Message msg_DONE = create_message(DONE, log_str);
+void send_DONE(process_t* process) {
+    Message msg_DONE;
+    msg_DONE.s_header.s_type = DONE;
     send_multicast(process, &msg_DONE);
 }
 
@@ -93,7 +112,7 @@ void send_ACK(process_t* process) {
 }
 
 void send_BALANCE(process_t* process) {
-    Message balance_history = create_message(BALANCE_HISTORY, &process->balance_history);
+    Message balance_history = create_bh(process);
     send(process, PARENT_ID, &balance_history);
 }
 
@@ -104,36 +123,47 @@ int freeze_balance(process_t* process) {
 void message_handler(process_t* process) {
     int DONE_counter = 0;
     int wait_num = process->process_num - 2;
-    while (DONE_counter < wait_num){
+    timestamp_t the_end;
+    while (DONE_counter < wait_num) {
 
         Message msg;
         receive_any(process, &msg);
         TransferOrder* transfer_order = (TransferOrder*) msg.s_payload;
         int src = transfer_order->s_src;
-        if (msg.s_header.s_type == TRANSFER && src == process->cur_id){
-            transfer_src_handler(process, transfer_order, msg);
+        int dst = transfer_order->s_dst;
+
+        if (msg.s_header.s_type == TRANSFER && src == process->cur_id) {
+        transfer_src_handler(process, transfer_order, msg);
         }
-        else if (msg.s_header.s_type == TRANSFER){   //уже в Cdst
-            transfer_dst_handler(process, transfer_order, msg); 
+        else if (msg.s_header.s_type == TRANSFER && dst == process->cur_id) {   //alreadyin Cdst
+            transfer_dst_handler(process, transfer_order);
         }
-        else if (msg.s_header.s_type == STOP){ // 3 phase
-            send_DONE(process, log_out(fd_event, log_done_fmt, get_physical_time(), process->cur_id, process->balance_state.s_balance));
+        else if (msg.s_header.s_type == STOP) { // 3 phase
+            send_DONE(process); //maybe problem is here
         }
-        else if (msg.s_header.s_type == DONE){
+        else if (msg.s_header.s_type == DONE) {
             DONE_counter++;
         }
     }
-    //log_out(fd_event, log_done_fmt, get_physical_time(), process->cur_id, process->balance_state.s_balance);
-    freeze_balance(process);
+    the_end = get_physical_time();
+
+    // printf("%s\n", process->balance_history.s_history[process->balance_history.s_history_len - 1]);
+    if (process->balance_state.s_time != the_end) {
+
+        process->balance_state = process->balance_history.s_history[process->balance_history.s_history_len - 1];
+        process->balance_state.s_time = the_end;
+    //printf("%hd\n", the_end);
+        
+    //process>balance_history
+        change_history(process);
+    }
+
+    log_out(fd_event, log_done_fmt, get_physical_time(), process->cur_id, process->balance_state.s_balance);
+  //  freeze_balance(process);
 
     send_BALANCE(process);
 
 }
-        /*
-        WHAT TO DO
-        1) Changing history of Ci and controlling TIME. 
-        2) Remember about logging
-        */
 
 void child_existence(process_t* process) {
     send_STARTED(process);
@@ -152,29 +182,24 @@ void parent_existence(process_t* process) {
     log_received_all_done(PARENT_ID);
     
     //need to get Histories and make AllHistory
-
-    /*int HISTORY_counter = 0;
+    int HISTORY_counter = 0;
     AllHistory allHistory;
+
     while(HISTORY_counter < process->process_num - 1){
         Message msg;
-        for (int i = 1; i < process->process_num; i++) {
-            if (receive(process, i, &msg) != 0){
-                continue;
-            if (msg.s_header.s_type == BALANCE_HISTORY){
-                HISTORY_counter++;
-                BalanceHistory* history = (BalanceHistory*) msg.s_payload;
-                allHistory.s_history[history->s_id - 1] = *history;
-                allHistory.s_history_len++;
-            }
-            }
+        receive_any(process, &msg);
+        if (msg.s_header.s_type == BALANCE_HISTORY){
+            HISTORY_counter++;
+            BalanceHistory* history = (BalanceHistory*) msg.s_payload;
+            allHistory.s_history[history->s_id - 1] = *history;
+            allHistory.s_history_len++;
         }
     }
 
-    AllHistory* allHistoryPtr = &allHistory;    
+   // print_history(&allHistory);
+    
 
-    print_history(allHistoryPtr);
-    */
-
+    /*
     AllHistory allHistory;
     allHistory.s_history_len = 0;
 
@@ -184,15 +209,16 @@ void parent_existence(process_t* process) {
 
         if(msg.s_header.s_type == BALANCE_HISTORY) {
 
-            BalanceHistory* BH = (BalanceHistory*) msg.s_payload;
-           // memcpy(&temp, &(msg.s_payload), sizeof(msg.s_payload));
-            allHistory.s_history[BH->s_id - 1] = *BH;
+            //BalanceHistory* BH = (BalanceHistory*) msg.s_payload;
+            BalanceHistory BH;
+            memcpy(&BH, &(msg.s_payload), sizeof(msg.s_payload));
+            allHistory.s_history[BH.s_id - 1] = BH;
             allHistory.s_history_len++;
         }
     }
+    */
 
     print_history( &allHistory );
-
     close_log();
     
     waiting_for_children();

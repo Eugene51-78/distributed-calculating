@@ -5,6 +5,8 @@
 
 Message create_message(MessageType type, void* content);
 
+Message create_bh(process_t* process);
+
 void wait_all(process_t* process, MessageType status);
 
 void transfer_handler(process_t* process);

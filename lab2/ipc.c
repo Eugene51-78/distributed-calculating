@@ -6,8 +6,9 @@
 #include "comm.h"
 int send(void * self, local_id dst, const Message * msg){
     process_t * process = self;
-    write(process->w_fd[process->cur_id][dst], msg, sizeof(MessageHeader) + msg->s_header.s_payload_len);
-    return 0;
+    if (write(process->w_fd[process->cur_id][dst], msg, sizeof(MessageHeader) + msg->s_header.s_payload_len) > 0)
+        return 0;
+    else return -1;
 }
 
 int send_multicast(void * self, const Message * msg){
@@ -16,7 +17,8 @@ int send_multicast(void * self, const Message * msg){
     for (local_id i = 0; i < process->process_num; i++) {
         if (i == process->cur_id) {
             continue;
-        } else send(process, i, msg);
+        } else if (send(process, i, msg) == -1)
+                    return -1;
     }
     return 0;
 }
