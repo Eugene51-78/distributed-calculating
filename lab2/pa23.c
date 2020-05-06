@@ -79,20 +79,18 @@ int main(int argc, char * argv[]) {
     create_pipes(&process);
 
     // fork
-    char * buffer = create_children(&process, balance);
+    create_children(&process, balance);
 
     close_pipes(&process);
 
     if (process.cur_id != PARENT_ID) {
-        child_existence(&process, buffer);
+        child_existence(&process);
     } else parent_existence(&process);
 
 //    AllHistory allHistory = getAllHistory(X, children);
 //    AllHistory* allHistoryPtr = &allHistory;
 //
 //    print_history(allHistoryPtr);
-
-    free(buffer);
 
     exit(0);
 }

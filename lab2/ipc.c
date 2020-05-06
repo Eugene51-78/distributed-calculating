@@ -6,7 +6,7 @@
 #include "comm.h"
 int send(void * self, local_id dst, const Message * msg){
     process_t * process = self;
-    write(process->w_fd[process->cur_id][dst], msg, sizeof(&msg));
+    write(process->w_fd[process->cur_id][dst], msg, sizeof(MessageHeader) + msg->s_header.s_payload_len);
     return 0;
 }
 
@@ -36,7 +36,6 @@ int receive_any(void * self, Message * msg){
                 continue;
             else if (receive(self, id, msg) != -1)    
                     return 0;
-                 else return -1;
         }
     }
 }

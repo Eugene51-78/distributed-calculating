@@ -13,7 +13,7 @@ void wait_STARTED(process_t* process);
 
 void wait_DONE(process_t* process);
 
-void send_STARTED(process_t* process, char* buf);
+void send_STARTED(process_t* process);
 
 void send_DONE(process_t* process, char* buf);
 
@@ -21,7 +21,7 @@ void send_STOP(process_t* process);
 
 void send_ACK(process_t* process);
 
-void child_existence(process_t* process, char* buf);
+void child_existence(process_t* process);
 
 void parent_existence(process_t* process);
 

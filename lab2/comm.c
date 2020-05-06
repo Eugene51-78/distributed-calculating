@@ -70,7 +70,7 @@ void close_pipes (process_t* process) {
 }
 
 // fork
-char * create_children (process_t* process, balance_t* balance) {
+void create_children (process_t* process, balance_t* balance) {
     for (local_id i = 0; i < process->process_num; i++) {
         if (i != PARENT_ID && process->cur_id == PARENT_ID) {
             pid_t pid = fork();
@@ -82,14 +82,10 @@ char * create_children (process_t* process, balance_t* balance) {
                process->balance_state.s_time = get_physical_time();
                process->balance_history.s_id = i;
                process->balance_history.s_history_len = 1;
-               process->balance_history.s_history[1] = process->balance_state;
-
-               return log_out(fd_event, log_started_fmt, get_physical_time(),
-                                    process->cur_id, getpid(), getppid(), process->balance_state.s_balance);
+               process->balance_history.s_history[0] = process->balance_state;
             }
         }
     }
-    return NULL;
 }
 
 void waiting_for_children(){

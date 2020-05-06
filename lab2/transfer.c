@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "ipc.h"
 #include "comm.h"

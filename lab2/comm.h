@@ -25,7 +25,7 @@ void init_parent(process_t* process, int process_count);
 void allocate_pipes(process_t* process);
 
 void close_pipes(process_t* process);
-char * create_children(process_t* process, balance_t* balance);
+void create_children(process_t* process, balance_t* balance);
 
 void waiting_for_children();
 

@@ -2,11 +2,12 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "ipc.h"
 #include "comm.h"
 #include "logging.h"
-#include "pa1.h"
+#include "pa2345.h"
 #include "banking.h"
 #include "transfer.h"
 
@@ -16,15 +17,15 @@ Message create_message(MessageType type, void* content) {
     msg.s_header.s_magic = MESSAGE_MAGIC;
     msg.s_header.s_type = type;
     msg.s_header.s_local_time = get_physical_time();
-    if (type == TRANSFER){
+    if (type == TRANSFER) {
         int sz = sizeof(TransferOrder);
         msg.s_header.s_payload_len = sz;
         memcpy(&(msg.s_payload), content, sz);
-    } else if (type == BALANCE_HISTORY){
+    } else if (type == BALANCE_HISTORY) {
         int sz = sizeof(BalanceHistory);
         msg.s_header.s_payload_len = sz;
         memcpy(&(msg.s_payload), content, sz);
-    } else{
+    } else {
         char* text = (char*) content;
         int sz = strlen(text);
         msg.s_header.s_payload_len = sz;          
@@ -69,13 +70,13 @@ void wait_DONE(process_t* process) {
 }
 
 void send_STARTED(process_t* process) {
-    Message msg_STARTED;
-    msg_STARTED.s_header.s_type = STARTED;
+    Message msg_STARTED = create_message(STARTED, log_out(fd_event, log_started_fmt, get_physical_time(),
+                                    process->cur_id, getpid(), getppid(), process->balance_state.s_balance));
     send(process, PARENT_ID, &msg_STARTED);
 }
 
-void send_DONE(process_t* process, char* buffer) {
-    Message msg_DONE = create_message(DONE, buffer);
+void send_DONE(process_t* process, char* log_str) {
+    Message msg_DONE = create_message(DONE, log_str);
     send_multicast(process, &msg_DONE);
 }
 
@@ -116,13 +117,13 @@ void message_handler(process_t* process) {
             transfer_dst_handler(process, transfer_order, msg); 
         }
         else if (msg.s_header.s_type == STOP){ // 3 phase
-            send_DONE(process, "hello");
+            send_DONE(process, log_out(fd_event, log_done_fmt, get_physical_time(), process->cur_id, process->balance_state.s_balance));
         }
         else if (msg.s_header.s_type == DONE){
             DONE_counter++;
         }
     }
-    log_received_all_done(process->cur_id);
+    //log_out(fd_event, log_done_fmt, get_physical_time(), process->cur_id, process->balance_state.s_balance);
     freeze_balance(process);
 
     send_BALANCE(process);
@@ -149,8 +150,10 @@ void parent_existence(process_t* process) {
 
     wait_DONE(process);
     log_received_all_done(PARENT_ID);
+    
     //need to get Histories and make AllHistory
-    int HISTORY_counter = 0;
+
+    /*int HISTORY_counter = 0;
     AllHistory allHistory;
     while(HISTORY_counter < process->process_num - 1){
         Message msg;
@@ -170,7 +173,28 @@ void parent_existence(process_t* process) {
     AllHistory* allHistoryPtr = &allHistory;    
 
     print_history(allHistoryPtr);
+    */
+
+    AllHistory allHistory;
+    allHistory.s_history_len = 0;
+
+    while( allHistory.s_history_len < process->process_num - 1 ) {
+        Message msg;
+        receive_any(process, &msg);
+
+        if(msg.s_header.s_type == BALANCE_HISTORY) {
+
+            BalanceHistory* BH = (BalanceHistory*) msg.s_payload;
+           // memcpy(&temp, &(msg.s_payload), sizeof(msg.s_payload));
+            allHistory.s_history[BH->s_id - 1] = *BH;
+            allHistory.s_history_len++;
+        }
+    }
+
+    print_history( &allHistory );
+
+    close_log();
     
     waiting_for_children();
-    close_log();
+
 }
