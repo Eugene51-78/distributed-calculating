@@ -3,28 +3,14 @@
 
 #include "comm.h"
 
-Message create_message(MessageType type, void* content);
+Message create_msg(MessageType type, void* content);
 
 Message create_bh(process_t* process);
-
-void wait_all(process_t* process, MessageType status);
-
-void transfer_handler(process_t* process);
-
-void wait_STARTED(process_t* process);
-
-void wait_DONE(process_t* process);
-
-void send_STARTED(process_t* process);
-
-void send_DONE(process_t* process, char* buf);
-
-void send_STOP(process_t* process);
-
-void send_ACK(process_t* process);
 
 void child_existence(process_t* process);
 
 void parent_existence(process_t* process);
+
+void freeze_balance(process_t* process);
 
 #endif  // _CONNECT_H_

@@ -4,6 +4,7 @@
 
 #include "ipc.h"
 #include "comm.h"
+
 int send(void * self, local_id dst, const Message * msg){
     process_t * process = self;
     if (write(process->w_fd[process->cur_id][dst], msg, sizeof(MessageHeader) + msg->s_header.s_payload_len) > 0)

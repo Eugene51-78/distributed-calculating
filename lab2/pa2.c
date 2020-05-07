@@ -9,8 +9,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include "stdio.h"
-#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <ctype.h>
@@ -68,7 +66,7 @@ int main(int argc, char * argv[]) {
 
     process_t process;
 
-    start_log();
+    log_init();
 
     init_parent(&process, process_num);
 
