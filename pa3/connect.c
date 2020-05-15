@@ -82,6 +82,9 @@ AllHistory make_all_history(process_t* process) {
     while(HISTORY_counter < process->process_num - 1){
         Message msg;
         receive_any(process, &msg);
+        
+        int time = msg.s_header.s_local_time;
+        change_lamp_time(time);
         if (msg.s_header.s_type == BALANCE_HISTORY){
             HISTORY_counter++;
             BalanceHistory* history = (BalanceHistory*) msg.s_payload;

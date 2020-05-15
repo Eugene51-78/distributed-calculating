@@ -47,11 +47,11 @@ char* log_out(int fd, const char *format, ...) {
 }
 
 void log_waited_for_all_STARTED(local_id id) {
-    log_out(fd_events, log_received_all_started_fmt, get_physical_time(), id);
+    log_out(fd_events, log_received_all_started_fmt, get_lamport_time(), id);
 }
 
 void log_waited_for_all_DONE(local_id id) {
-    log_out(fd_events, log_received_all_done_fmt, get_physical_time(), id);
+    log_out(fd_events, log_received_all_done_fmt, get_lamport_time(), id);
 }
 
 void log_create_pipe(local_id id, int* fd) {

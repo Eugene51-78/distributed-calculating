@@ -85,10 +85,5 @@ int main(int argc, char * argv[]) {
         child_existence(&process);
     } else parent_existence(&process);
 
-//    AllHistory allHistory = getAllHistory(X, children);
-//    AllHistory* allHistoryPtr = &allHistory;
-//
-//    print_history(allHistoryPtr);
-
     exit(0);
 }
