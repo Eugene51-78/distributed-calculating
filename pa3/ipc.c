@@ -26,7 +26,8 @@ int send_multicast(void * self, const Message * msg){
 
 int receive(void * self, local_id from, Message * msg){
     process_t * process = self;
-    int f = read(process->r_fd[process->cur_id][from], msg, sizeof(Message)); // change the size
+    //int f = read(process->r_fd[process->cur_id][from], msg, sizeof(MessageHeader) + MAX_PAYLOAD_LEN - 3000); // change the size
+    int f = read(process->r_fd[process->cur_id][from], msg, sizeof(Message)); 
     if ((f == -1) || (f == 0)) return -1;
     else return 0;
 }

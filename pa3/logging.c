@@ -9,55 +9,55 @@
 #include "common.h" 
 #include "banking.h"
 
-int fd_events;
-int fd_pipes;
+FILE* f_events;
+FILE* f_pipes;
 
 void log_init() {
-    fd_events = open(events_log, O_CREAT | O_TRUNC | O_WRONLY, 00744);
-    fd_pipes = open(pipes_log, O_CREAT | O_TRUNC | O_WRONLY, 00744);
+    f_events = fopen(events_log, "w");
+    f_pipes = fopen(pipes_log, "w");
 }
 
 void close_log() {
-    close(fd_events);
-    close(fd_pipes);
+    fclose(f_events);
+    fclose(f_pipes);
 }
 
-void log_error(int fd, const char *str) {
-    write(2, str, strlen(str));
-    write(2, "\n", 1);
-    write(fd, str, strlen(str));
+void log_STARTED(process_t* process) {
+    fprintf(f_events, log_started_fmt, get_lamport_time(), process->cur_id, getpid(), getppid(), process->balance_state.s_balance);
+    printf(log_started_fmt, get_lamport_time(), process->cur_id, getpid(), getppid(), process->balance_state.s_balance);
 }
 
-char* log_out(int fd, const char *format, ...) {
-    
-    va_list args;
-    va_start(args, format);
-
-    char* log_str = malloc(sizeof(format));
-
-    vsprintf(log_str, format, args);
-
-    if (fd == fd_events)
-        write(1, log_str, strlen(log_str));
-    
-    write(fd, log_str, strlen(log_str));
-    va_end(args);
-
-    return log_str;
+void log_DONE(local_id id, balance_t balance) {
+    fprintf(f_events, log_done_fmt, get_lamport_time(), id, balance);
+    printf(log_done_fmt, get_lamport_time(), id, balance);
 }
 
 void log_waited_for_all_STARTED(local_id id) {
-    log_out(fd_events, log_received_all_started_fmt, get_lamport_time(), id);
+    fprintf(f_events, log_received_all_started_fmt, get_lamport_time(), id);
+    printf(log_received_all_started_fmt, get_lamport_time(), id);
 }
 
 void log_waited_for_all_DONE(local_id id) {
-    log_out(fd_events, log_received_all_done_fmt, get_lamport_time(), id);
+    fprintf(f_events, log_received_all_done_fmt, get_lamport_time(), id);
+    printf(log_received_all_done_fmt, get_lamport_time(), id);
+}
+
+void log_transfer_in(local_id dst, balance_t amount, local_id src) {
+    fprintf(f_events, log_transfer_in_fmt, get_lamport_time(), dst, amount, src);
+    printf(log_transfer_in_fmt, get_lamport_time(), dst, amount, src);
+}
+
+void log_transfer_out(local_id src, balance_t amount, local_id dst) {
+    fprintf(f_events, log_transfer_out_fmt, get_lamport_time(), src, amount, dst);
+    printf(log_transfer_out_fmt, get_lamport_time(), src, amount, dst);
 }
 
 void log_create_pipe(local_id id, int* fd) {
-    log_out(fd_pipes, log_created_pipe_fmt, id, fd[0], fd[1]);
+    fprintf(f_pipes, log_created_pipe_fmt, id, fd[0], fd[1]);
+    //printf(log_created_pipe_fmt, id, fd[0], fd[1]);
 }
 
 void log_close_fd(local_id id, int fd) {
-    log_out(fd_pipes, log_closed_fd_fmt, id, fd);
+    fprintf(f_pipes, log_closed_fd_fmt, id, fd);
+   // printf(log_closed_fd_fmt, id, fd);
 }

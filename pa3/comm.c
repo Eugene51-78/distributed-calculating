@@ -80,10 +80,8 @@ void create_children(process_t* process, balance_t* balance) {
                 process->balance_history.s_id = i;
                 process->balance_history.s_history_len = 1;
                 process->balance_history.s_history[0] = process->balance_state;
-                
-                timestamp_t cur_time = get_lamport_time();
-                log_out(fd_events, log_started_fmt, cur_time,
-                                process->cur_id, getpid(), getppid(), process->balance_state.s_balance);
+
+                log_STARTED(process);
             }
         }
     }

@@ -13,6 +13,7 @@
 #include "transfer.h"
 #include "connect.h"
 #include "sender.h"
+#include "waiter.h"
 
 void transfer(void * parent_data, local_id src, local_id dst, balance_t amount) {
 
@@ -24,11 +25,9 @@ void transfer(void * parent_data, local_id src, local_id dst, balance_t amount) 
     transfer_order.s_amount = amount;
 
     Message msg_TRANSFER = create_msg(TRANSFER, &transfer_order);
-    send_TRANSFER(process, src, &msg_TRANSFER);
+    send_TRANSFER(process, src, msg_TRANSFER);
 
-    timestamp_t cur_time = get_lamport_time();
-    log_out(fd_events, log_transfer_out_fmt, cur_time, src, amount, dst);
-
+    log_transfer_out(src, amount, dst);
     wait_ACK(process, src, dst, amount);
 }
 
@@ -39,7 +38,8 @@ void transfer_src_handler(process_t* process, TransferOrder* order, Message msg)
     process->balance_state.s_time = get_lamport_time();
     process->balance_state.s_balance -= transfer_order->s_amount;  //need to change balance
     change_history(process);
-    send_to_Cdst(process, dst, &msg);
+    usleep(10000);
+    send_to_Cdst(process, dst, msg);
 }
 
 void transfer_dst_handler(process_t* process, TransferOrder* order) {

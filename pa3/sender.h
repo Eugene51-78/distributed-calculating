@@ -9,6 +9,8 @@ void send_DONE(process_t* process);
 
 void send_TRANSFER(process_t* process, int src, Message msg);
 
+void send_to_Cdst(process_t* process, int dst, Message msg);
+
 void send_STOP(process_t* process);
 
 void send_ACK(process_t* process);

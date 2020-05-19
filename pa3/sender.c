@@ -1,4 +1,6 @@
+#define _GNU_SOURCE
 #include <stdio.h>
+#include <unistd.h>
 #include "connect.h"
 
 void send_STARTED(process_t* process) {
@@ -20,11 +22,11 @@ void send_DONE(process_t* process) {
     for the following 2 functions the time has already been increased by 1 in create_msg()
 */
 void send_TRANSFER(process_t* process, int src, Message msg) {
-    send(process, src, &msg_TRANSFER);
+    send(process, src, &msg);
 }
 
 void send_to_Cdst(process_t* process, int dst, Message msg){
-    send(process, dst, &msg_TRANSFER_FRW); //moving to Cdst
+    send(process, dst, &msg); //moving to Cdst
   }
 
 void send_STOP(process_t* process) {
@@ -47,6 +49,7 @@ void send_ACK(process_t* process) {
     the time has already been increased by 1 in create_bh()
 */
 void send_BALANCE(process_t* process) {
+    usleep(20000);
     Message balance_history = create_bh(process);
     send(process, PARENT_ID, &balance_history);
 }

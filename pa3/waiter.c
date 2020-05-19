@@ -48,6 +48,7 @@ void wait_DONE(process_t* process) {
             }
         }
     }
+    //usleep(10000);
 }
 
 void wait_ACK(process_t* process, local_id src, local_id dst, balance_t amount) {
@@ -63,8 +64,7 @@ void wait_ACK(process_t* process, local_id src, local_id dst, balance_t amount) 
     int time = msg_CONFIRMATION.s_header.s_local_time;
     change_lamp_time(time);
     //printf("%s\n", "ACK POLY4ENO");
-    timestamp_t cur_time = get_lamport_time();
-    log_out(fd_events, log_transfer_in_fmt, cur_time, dst, amount, src);
+    log_transfer_in(dst, amount, src);
 }
 
 void message_handler(process_t* process) {
@@ -96,8 +96,7 @@ void message_handler(process_t* process) {
         }
     }
     
-    timestamp_t cur_time = get_lamport_time();
-    log_out(fd_events, log_done_fmt, cur_time, process->cur_id, process->balance_state.s_balance);
+    log_DONE(process->cur_id, process->balance_state.s_balance);
     freeze_balance(process);
     send_BALANCE(process);
 }

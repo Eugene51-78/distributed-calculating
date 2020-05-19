@@ -7,6 +7,10 @@ Message create_msg(MessageType type, void* content);
 
 Message create_bh(process_t* process);
 
+void increase_lamp_time();
+
+void change_lamp_time(int time);
+
 void child_existence(process_t* process);
 
 void parent_existence(process_t* process);
