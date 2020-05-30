@@ -5,6 +5,6 @@ void transfer_src_handler(process_t* process, TransferOrder* order, Message msg)
 
 void transfer_dst_handler(process_t* process, TransferOrder* order);
 
-void change_history(process_t* process);
+void change_history(process_t* process, short flag, short amount);
 
 #endif  // _TRANSFER_H_

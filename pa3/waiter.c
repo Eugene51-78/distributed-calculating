@@ -1,5 +1,3 @@
-#define _BSD_SOURCE
-#include <unistd.h>
 #include <stdlib.h>
 
 #include "logging.h"
@@ -14,7 +12,7 @@ void wait_STARTED(process_t* process) {
     int wait_num = process->process_num;
     
     while (wait_counter < wait_num){
-        for (local_id i = 1; i < process->process_num; i++) {
+        for (int i = 1; i < process->process_num; i++) {
             if(i != process->cur_id) {
                 Message msg;
                 receive(process, i, &msg);
@@ -35,7 +33,7 @@ void wait_DONE(process_t* process) {
     int wait_num = process->process_num;
     
     while (wait_counter < wait_num){
-        for (local_id i = 1; i < process->process_num; i++) {
+        for (int i = 1; i < process->process_num; i++) {
             if(i != process->cur_id) {
                 Message msg;
                 receive(process, i, &msg);
@@ -48,23 +46,17 @@ void wait_DONE(process_t* process) {
             }
         }
     }
-    //usleep(10000);
 }
 
-void wait_ACK(process_t* process, local_id src, local_id dst, balance_t amount) {
+void wait_ACK(process_t* process, int src, int dst, balance_t amount) {
     
     Message msg_CONFIRMATION;
 
     while (msg_CONFIRMATION.s_header.s_type != ACK){
-       // printf("%s\n", "ACK V CYCLE POLY4ENIYA");
         receive(process, dst, &msg_CONFIRMATION);
-       // if (confirmation.s_header.s_type != ACK) printf("%hd\n", confirmation.s_header.s_type);
     }
-
     int time = msg_CONFIRMATION.s_header.s_local_time;
     change_lamp_time(time);
-    //printf("%s\n", "ACK POLY4ENO");
-    log_transfer_in(dst, amount, src);
 }
 
 void message_handler(process_t* process) {

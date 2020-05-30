@@ -1,21 +1,10 @@
-#include "banking.h"
-#include <stdio.h>
-#include <unistd.h>
-#include <errno.h>
 #include <getopt.h>
-#include <string.h>
 #include <malloc.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <ctype.h>
 
 #include "ipc.h"
-#include "logging.h"
 #include "comm.h"
+#include "logging.h"
 #include "connect.h"
 #include "banking.h"
 
@@ -25,12 +14,10 @@ AllHistory getAllHistory(int process_count, process_t* children) {
     for (int j = 0; j < process_count; ++j) {
         allHistory.s_history[j] = children[j].balance_history;
     }
-
     return allHistory;
 }
 
 int main(int argc, char * argv[]) {
-
     int rez = 0;
     int X = 0;
     while ((rez = getopt(argc, argv, "p")) != -1) {
@@ -62,7 +49,7 @@ int main(int argc, char * argv[]) {
         }
     }
 
-    local_id process_num = X + 1;
+    int process_num = X + 1;
 
     process_t process;
 

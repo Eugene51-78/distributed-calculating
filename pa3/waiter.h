@@ -5,7 +5,7 @@ void wait_STARTED(process_t* process);
 
 void wait_DONE(process_t* process);
 
-void wait_ACK(process_t* process, local_id src, local_id dst, balance_t amount);
+void wait_ACK(process_t* process, int src, int dst, balance_t amount);
 
 void message_handler(process_t* process);
 

@@ -10,7 +10,7 @@
 #include "logging.h"
 #include "pa3.h"
 
-int close_fd(local_id id, int fd) {
+int close_fd(int id, int fd) {
     if (close(fd) == 0) {
         log_close_fd(id, fd);
         return 0;
@@ -19,8 +19,8 @@ int close_fd(local_id id, int fd) {
 }
 
 void create_pipes(process_t* process) {
-    for (local_id i = 0; i < process->process_num; i++) {
-        for (local_id j = 0; j < process->process_num; j++) {
+    for (int i = 0; i < process->process_num; i++) {
+        for (int j = 0; j < process->process_num; j++) {
             if (i != j) {
                 int pipefd[2];
                 pipe2(pipefd, O_NONBLOCK);
@@ -35,23 +35,23 @@ void create_pipes(process_t* process) {
 void allocate_pipes(process_t* process){
 
     int process_number = process->process_num;
-    process->r_fd = malloc(sizeof(int*) * process_number);
-    process->w_fd = malloc(sizeof(int*) * process_number);
+    process->r_fd = malloc(process_number * (process_number - 1) * sizeof(int));
+    process->w_fd = malloc(process_number * (process_number - 1) * sizeof(int));
 
     for (int i = 0; i < process_number; i++) {
         if (i == 0) {
-        process->r_fd[i] = malloc(sizeof(int) * process_number*process_number);
-        process->w_fd[i] = malloc(sizeof(int) * process_number*process_number);
+            process->r_fd[i] = malloc(sizeof(int) * process_number*process_number);
+            process->w_fd[i] = malloc(sizeof(int) * process_number*process_number);
         } else {
-        process->r_fd[i] = (*(process->r_fd) + process_number * i);
-        process->w_fd[i] = (*(process->w_fd) + process_number * i);
+            process->r_fd[i] = (*(process->r_fd) + process_number * i);
+            process->w_fd[i] = (*(process->w_fd) + process_number * i);
         }
     }
 } 
 
 void close_pipes(process_t* process) {
-    for (local_id i = 0; i < process->process_num; i++) {
-        for (local_id j = 0; j < process->process_num; j++) {
+    for (int i = 0; i < process->process_num; i++) {
+        for (int j = 0; j < process->process_num; j++) {
             if (i != process->cur_id && i != j) {
                 close_fd(process->cur_id, process->r_fd[i][j]);
                 close_fd(process->cur_id, process->w_fd[i][j]);
@@ -66,7 +66,7 @@ void init_parent(process_t* process, int process_num) {
 }
 // fork
 void create_children(process_t* process, balance_t* balance) {
-    for (local_id i = 1; i < process->process_num; i++) {
+    for (int i = 1; i < process->process_num; i++) {
         if (process->cur_id == PARENT_ID) {
             pid_t pid = fork();
             if (pid == 0) {

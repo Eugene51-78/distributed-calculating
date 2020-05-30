@@ -14,7 +14,6 @@ int send(void * self, local_id dst, const Message * msg){
 
 int send_multicast(void * self, const Message * msg){
     process_t * process = self;
-
     for (local_id i = 0; i < process->process_num; i++) {
         if (i == process->cur_id) {
             continue;
@@ -26,15 +25,14 @@ int send_multicast(void * self, const Message * msg){
 
 int receive(void * self, local_id from, Message * msg){
     process_t * process = self;
-    //int f = read(process->r_fd[process->cur_id][from], msg, sizeof(MessageHeader) + MAX_PAYLOAD_LEN - 3000); // change the size
-    int f = read(process->r_fd[process->cur_id][from], msg, sizeof(Message)); 
+    int f = read(process->r_fd[process->cur_id][from], msg, sizeof(MessageHeader) + 1000);
     if ((f == -1) || (f == 0)) return -1;
     else return 0;
 }
 
 int receive_any(void * self, Message * msg){
     process_t * process = self;
-    while(1){
+    while(1) {
         for (local_id id = 0; id < process->process_num; id++){
             if (id == process->cur_id)
                 continue;

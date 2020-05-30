@@ -7,15 +7,15 @@
 #include "banking.h"
 
 typedef struct {
-    local_id  cur_id;
+    int  cur_id;
     int**     r_fd;
     int**     w_fd;
-    local_id  process_num;
+    int  process_num;
     BalanceState balance_state;
     BalanceHistory balance_history;
 } process_t;
 
-int close_fd(local_id id, int fd);
+int close_fd(int id, int fd);
 
 void create_pipes(process_t* process);
 
